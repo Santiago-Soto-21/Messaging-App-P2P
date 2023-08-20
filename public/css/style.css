@@ -1,4 +1,4 @@
-.Titre{
+.Title{
     background-color: black;
     padding: 15px;
     color:white;
@@ -17,7 +17,7 @@
     border-radius: 5px;
   }
   
-  .Nouveau_Message{
+  .New_Message{
     background-color: rgb(29,155,240);
     padding:10px;
     color: white;
@@ -41,7 +41,7 @@
     font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif
   }
   
-  .liste{
+  .list{
     margin: 0;
     padding: 0;
     position: fixed;
@@ -57,7 +57,7 @@
     cursor: default;
   }
   
-  .Courriels{
+  .Emails{
     float: left;
     border-radius: 5px;
     border-color: black;
@@ -68,12 +68,12 @@
     box-shadow: 1px  1px 3px 3px rgb(207, 207, 207);
   }
   
-  .Carte{
+  .Card{
     margin-top: 1px;
     border: 1px dashed black;
   }
   
-  .Aperçu_email{
+  .Email_form{
     float: right;
     box-shadow: 1px  1px 3px 3px rgb(207, 207, 207);
     border-radius: 5px;
