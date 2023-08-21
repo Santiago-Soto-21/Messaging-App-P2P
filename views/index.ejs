@@ -1,73 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=, initial-scale=1.0">
-  <title>Messagerie Web</title>
-  <link rel="stylesheet" href="css/style.css" type="text/css">
-  <script src="js/forge.min.js"></script>
-</head>
-<body style="height:100%;overflow: hidden;">
-  <div class ="Title">
-    Inlook
-    
-    <input type="searching"
-    id="search"; 
-    onkeyup="search()"
-    style="padding:15px;
-    border-width: 3px;
-    border-color:blue;
-    border-radius: 10px;
-    vertical-align: middle;
-    width:80%"
-    placeholder="Search emails";>
-    &#128269;
-  </div>
-
-  <div class="Toolbar">
-    <button class="New_Message" onclick="NewMail()">
-      New Mail
-    </button>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=, initial-scale=1.0" />
+    <title>Messagerie Web</title>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
+    <script src="js/forge.min.js"></script>
+  </head>
   
-  <div class="Drop_menu">
+  <body>
+    <div class="Title">
+      Inlook
+      <input
+        type="searching"
+        id="search"
+        onkeyup="search()"
+        placeholder="Search emails"
+      />
+      &#128269;
+    </div>
+
+    <div class="Toolbar">
+      <button class="New_Message" onclick="NewMail()">New Mail</button>
+      <button class="Refresh" onclick="getMessages()">Refresh</button>
+    </div>
+
+    <div class="Drop_menu">
       <label for="Mail"></label>
-      <select name="Option_menu" id="Option_menu" oninput="Drop_menu();" style="padding: 10px; background:#5ea9f4; width: 100%;height: 105%;border-radius: 5px;">
+      <select name="Option_menu" id="Option_menu" oninput="Drop_menu();">
         <option value="Inbox">Inbox</option>
         <option value="Emails sent">Sent</option>
       </select>
-  </div>
-
-  <div class="Email_form">
-    <div id="form" style="display:none;">
-      <label for="Address">To:</label><br>
-      <input type="text" id="Address" name="Address"
-      style ="width:98%; margin-left: 5px;"><br>
-      <label for="Title">Subject:</label><br>
-      <input type="text" id="Title" name="Title"
-      style ="width:98%; margin-left: 5px;">
-      <label for="Content">Content:</label><br>
-      <textarea style="margin-left:5px;" id="Content" name="Content" rows="19" cols="111">
-      </textarea><br>
-    </div>
- </div>
-
-  <div class="Emails">
-    <div class="list" id="Received">
-      <a></a>
-      <p style="display:none">Content</p>
     </div>
 
-    <div class="list" id="Sent">
-      <div class="Card">
-       <a></a>
-       <p style="display:none">Content</p>
+    <div class="Email_form">
+      <div id="form" style="display: none">
+        <label for="Address">To:</label><br />
+        <input type="text" id="Address" name="Address" /><br />
+        <label for="Title">Subject:</label><br />
+        <input type="text" id="Title" name="Title" /><br />
+        <label for="Content">Content:</label><br />
+        <textarea id="Content" name="Content" rows="19" cols="111"> </textarea
+        ><br />
       </div>
     </div>
-  </div>  
 
-  <script src="js/script.js"></script>
+    <div class="Emails">
+      <div class="list" id="Received">
+        <div class="Card">
+          <a></a>
+          <p style="display: none">Content</p>
+        </div>
+      </div>
 
-</body>
+      <div class="list" id="Sent">
+        <div class="Card">
+          <a></a>
+          <p style="display: none">Content</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/script.js"></script>
+  </body>
 </html>
