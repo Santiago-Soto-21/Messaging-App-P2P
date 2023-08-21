@@ -39,6 +39,7 @@ function NewMail() {
   var sendButton = document.createElement("button");
   sendButton.style.marginLeft = "5px";
   sendButton.style.height = "27px";
+  sendButton.style.cursor = "pointer";
   sendButton.textContent = "Send ➡️";
   sendButton.onclick = addMail;
 
@@ -46,6 +47,7 @@ function NewMail() {
   var cancelButton = document.createElement("button");
   cancelButton.style.height = "27px";
   cancelButton.style.marginTop = "8px";
+  cancelButton.style.cursor = "pointer";
   cancelButton.textContent = "Cancel ❌";
   cancelButton.onclick = deleteMail;
 
@@ -57,32 +59,6 @@ function NewMail() {
 
 // Fonction qui ajoute un courriel à la liste d'envois lorsque "Envoyer" est appuyé
 function addMail() {
-  const titled = document.createElement("div");
-  const titlename = document.createTextNode(
-    document.getElementById("Title").value
-  );
-  const a = document.createElement("a");
-  const br = document.createElement("br");
-  const p = document.createElement("p");
-  const useremail = document.createTextNode(
-    document.getElementById("Address").value
-  );
-  const content = document.createTextNode(
-    document.getElementById("Content").value
-  );
-  titled.appendChild(a);
-  a.appendChild(useremail);
-  a.appendChild(br);
-  a.appendChild(titlename);
-  titled.appendChild(p);
-  p.appendChild(content);
-  document.getElementById("Sent").appendChild(titled);
-  titled.setAttribute("class", "Card");
-  titled.setAttribute("onclick", "emailForm(this.id)");
-  let time = new Date().getTime();
-  titled.setAttribute("id", time);
-  p.setAttribute("style", "display:none;");
-
   const contact = document.getElementById("Address").value;
   const title = document.getElementById("Title").value;
   const message = document.getElementById("Content").value;
@@ -93,12 +69,33 @@ function addMail() {
     message: message,
   };
 
+  saveMessage(email);
   sendMessage(email);
 
   document.getElementById("Title").value = "";
   document.getElementById("Address").value = "";
   document.getElementById("Content").value = "";
   document.getElementById("form").style.display = "none";
+}
+
+function messageReceived(contact, title, message) {
+  deleteMail();
+
+  const formElement = document.getElementById("form");
+
+  const addressInput = document.getElementById("Address");
+  const titleInput = document.getElementById("Title");
+  const contentTextarea = document.getElementById("Content");
+  
+  addressInput.readOnly = true;
+  titleInput.readOnly = true;
+  contentTextarea.readOnly = true;
+ 
+  document.getElementById("Title").value = title;
+  document.getElementById("Address").value = contact;
+  document.getElementById("Content").value = message;
+
+  formElement.style.display = "block";
 }
 
 // Fonction qui efface le courriel en cours lorsque "Abandonner" est appuyé
@@ -115,27 +112,6 @@ function deleteMail() {
   });
 
   document.getElementById("form").style.display = "none";
-}
-
-// Fonction qui affiche le content du courriel
-function emailForm(clickedId) {
-  document.getElementById("form").style.display = "block";
-  document.getElementById("Title").value = document
-    .getElementById(clickedId)
-    .getElementsByTagName("a")[0].childNodes[2].textContent;
-  document.getElementById("Address").value = document
-    .getElementById(clickedId)
-    .getElementsByTagName("a")[0].childNodes[0].textContent;
-  document.getElementById("Content").value = document
-    .getElementById(clickedId)
-    .getElementsByTagName("p")[0].innerText;
-}
-
-function messageReceived(contact, title, message) {
-  document.getElementById("form").style.display = "block";
-  document.getElementById("Title").value = title;
-  document.getElementById("Address").value = contact;
-  document.getElementById("Content").value = message;
 }
 
 //Fonction du drop menu qui affiche la boite de reception, le carnet d'address ou
@@ -156,6 +132,7 @@ function Drop_menu() {
     document.getElementById("Sent").style.display = "block";
     document.getElementById("Received").style.display = "none";
 
+    getSavedMessages();
     return optionValue;
   }
 }
@@ -219,6 +196,27 @@ async function getReceiverPublicKey() {
   }
 }
 
+async function saveMessage(email){
+  try{
+    const response = await fetch("/saveLetters", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(email, null, 2), // Convert the message object to JSON string and include it as the request body
+    });
+
+    if (response.ok) {
+      // Request was successful
+      console.log("The email was successfully saved");
+    } else{
+      console.error("Unable to save email:", response.statusText);
+    } 
+  } catch (error) {
+    console.error("Unable to save email:", error);
+  }
+}
+
 async function sendMessage(email) {
   try {
     // Wait until receiverPublicKey is fetched before proceeding
@@ -276,6 +274,67 @@ async function getPrivateKey() {
     }
   } catch (error) {
     console.error("Could not get private key:", error);
+  }
+}
+
+async function getSavedMessages(){
+  try {
+    // Send a GET request to the server to retrieve the JSON array
+    const response = await fetch("/getSavedLetters", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      // Response received successfully
+      const messagesData = await response.json(); // Parse the response as JSON
+
+      // Access the element in the DOM where you want to display the JSON data
+      const outputElement = document.getElementById("Sent");
+
+      // Clear any existing content in the outputElement
+      outputElement.innerHTML = "";
+
+      // Loop through the array and create HTML elements to display the data
+      messagesData.forEach((item) => {
+        // Create container div for each message
+        if (item.contact && item.title && item.message != undefined) {
+          const messageContainer = document.createElement("div");
+          messageContainer.setAttribute("class", "Card");
+          messageContainer.setAttribute(
+            "onclick",
+            `messageReceived('${item.contact}', '${item.title}', '${item.message}')`
+          );
+
+          // Create contact element
+          const a = document.createElement("a");
+          const br = document.createElement("br");
+          const p = document.createElement("p");
+
+          const contact = document.createTextNode(item.contact);
+          const title = document.createTextNode(item.title);
+          const message = document.createTextNode(item.message);
+
+          messageContainer.appendChild(a);
+          a.appendChild(contact);
+          a.appendChild(br);
+          a.appendChild(title);
+          messageContainer.appendChild(p);
+          p.appendChild(message);
+          p.setAttribute("style", "display:none;");
+
+          // Append the message container to the outputElement
+          outputElement.appendChild(messageContainer);
+        }
+      });
+    } else {
+      // Request failed
+      console.error("Could not get saved emails:", response.statusText);
+    }
+  } catch (error) {
+    console.error("Could not get saved emails:", error);
   }
 }
 
