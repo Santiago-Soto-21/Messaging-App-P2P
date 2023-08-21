@@ -42,6 +42,26 @@ app.post("/addKeys", (req, res) => {
   res.status(201).send("Keys were successfully stored");
 });
 
+app.post("/saveLetters", (req, res) => {
+  // Read the content inside "outbox.json"
+  const fileContents = fs.readFileSync("sent.json", "utf-8");
+
+  // Parse the contents to a JavaScript object
+  const messagesData = JSON.parse(fileContents);
+
+  // Add the encrypted object to the "outbox" array in the JavaScript object
+  messagesData.unshift(req.body);
+
+  // Convert the updated JavaScript object back to JSON string
+  const updatedFileContents = JSON.stringify(messagesData, null, 2);
+
+  // Write the updated JSON string back to the file
+  fs.writeFileSync("sent.json", updatedFileContents);
+
+  // Send a success response
+  res.status(201).send("The email was sent");
+});
+
 app.post("/addLetters", (req, res) => {
   // Read the content inside "outbox.json"
   const fileContents = fs.readFileSync("outbox.json", "utf-8");
@@ -139,6 +159,22 @@ app.get("/getReceiverPublicKey", (req, res) => {
   });
 });
 
+app.get("/getSavedLetters", (req, res) => {
+  try {
+    // Read the encrypted data from the file
+    const fileContents = fs.readFileSync("sent.json", "utf-8");
+
+    // Parse the contents to a JavaScript object
+    const messagesData = JSON.parse(fileContents);
+
+    // Send the data as a JSON response
+    res.json(messagesData);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 app.get("/getLetters", (req, res) => {
   try {
     // Read the encrypted data from the file
@@ -190,12 +226,10 @@ var refreshInbox = () => {
 
     // Update the local JSON file with the merged array
     fs.writeFileSync("inbox.json", JSON.stringify(myInbox, null, 2));
-
-    console.log("Local JSON file updated with merged array:", JSON.stringify(myInbox, null, 2));
   });
 };
 
 app.listen(3000, () => {
   console.log("The server is in port 3000");
-  setInterval(refreshInbox, 15000);
+  setInterval(refreshInbox, 5000);
 });
