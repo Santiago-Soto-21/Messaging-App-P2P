@@ -1,11 +1,12 @@
-// Initializing global variables
+// Initialize global variables
 const forge = window.forge;
-let sendKeysExecuted = false;
+var sendKeysExecuted = false;
 var optionValue = "Inbox";
 
-Drop_menu(); //S'assurer que la liste soit dans le bon mode au lancement de la page
-//Fonction qui permet la search de nom ou d'address
+// Ensure the drop-down menu is set correctly on page load
+Drop_menu();
 
+// Function for searching emails by name or address
 function search() {
   let a, str, div;
   let Input = document.getElementById("search");
@@ -19,6 +20,7 @@ function search() {
     div = Received.getElementsByTagName("div");
   }
 
+   // Loop through the elements and update display style based on filter
   for (let i = 0; i < div.length; i++) {
     a = div[i].getElementsByTagName("a")[0];
     str = a.textContent || a.innerText;
@@ -29,7 +31,8 @@ function search() {
     }
   }
 }
-// Fonction qui affiche le form d'un nouveau message
+
+// Function to display the form for composing a new email
 function NewMail() {
   deleteMail();
 
@@ -57,7 +60,7 @@ function NewMail() {
   form.appendChild(cancelButton);
 }
 
-// Fonction qui ajoute un courriel à la liste d'envois lorsque "Envoyer" est appuyé
+// Function to add an email to the sent email list and to the outbox list upon pressing "Send"
 function addMail() {
   const contact = document.getElementById("Address").value;
   const title = document.getElementById("Title").value;
@@ -78,15 +81,16 @@ function addMail() {
   document.getElementById("form").style.display = "none";
 }
 
+// Function to display the contents of received emails and sent emails
 function messageReceived(contact, title, message) {
   deleteMail();
 
   const formElement = document.getElementById("form");
-
   const addressInput = document.getElementById("Address");
   const titleInput = document.getElementById("Title");
   const contentTextarea = document.getElementById("Content");
   
+  // Turns on read only mode to stop the user from modifying the contents of the displayed emails
   addressInput.readOnly = true;
   titleInput.readOnly = true;
   contentTextarea.readOnly = true;
@@ -98,7 +102,7 @@ function messageReceived(contact, title, message) {
   formElement.style.display = "block";
 }
 
-// Fonction qui efface le courriel en cours lorsque "Abandonner" est appuyé
+// Function to clear the current email form
 function deleteMail() {
   document.getElementById("Title").value = "";
   document.getElementById("Address").value = "";
@@ -114,45 +118,46 @@ function deleteMail() {
   document.getElementById("form").style.display = "none";
 }
 
-//Fonction du drop menu qui affiche la boite de reception, le carnet d'address ou
+// Function for the drop-down menu to display either Inbox or Sent items
 function Drop_menu() {
-  var optionValue = document.getElementById("Option_menu").value; //valeur selectioné dans le drop menu
+  var optionValue = document.getElementById("Option_menu").value;
 
-  //Affichage Boite de reception
+  // Display Inbox
   if (optionValue == "Inbox") {
     document.getElementById("Sent").style.display = "none";
     document.getElementById("Received").style.display = "block";
 
     getMessages();
+
     return optionValue;
   }
 
-  //Affichage emails sent
+  // Display Sent items
   if (optionValue == "Emails sent") {
     document.getElementById("Sent").style.display = "block";
     document.getElementById("Received").style.display = "none";
 
     getSavedMessages();
+
     return optionValue;
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// Fetch and get requests
-
 // Generate RSA key pair for encryption and decryption
-
 async function sendKeys() {
   try {
-    const keyPair = forge.pki.rsa.generateKeyPair({ bits: 1024 });
+    // Generate RSA key pair with the length of 2048 bits
+    const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
     const privateKeyPem = forge.pki.privateKeyToPem(keyPair.privateKey);
     const publicKeyPem = forge.pki.publicKeyToPem(keyPair.publicKey);
 
+    // Store private and public keys inside a Javascript object
     const keys = {
       privateKey: privateKeyPem,
       publicKey: publicKeyPem,
     };
 
+    // Send a POST request to the server with the generated key pair as JSON string in the request body
     const response = await fetch("/addKeys", {
       method: "POST",
       headers: {
@@ -163,6 +168,8 @@ async function sendKeys() {
 
     if (response.ok) {
       console.log("Keys were sent.");
+
+      // Changes boolean flag to true so as not to send a generated key pair each time the method is called
       sendKeysExecuted = true;
     } else {
       console.error("Could not send keys:", response.statusText);
@@ -172,11 +179,14 @@ async function sendKeys() {
   }
 }
 
+// Initialize key pair for encryption and decryption
 var receiverPublicKey = null;
 var privateKey = null;
 
+// Fetch the receiver's public key
 async function getReceiverPublicKey() {
   try {
+    // Send a GET request to the server to retrieve the receiver's public key
     const response = await fetch("/getReceiverPublicKey", {
       method: "GET",
       headers: {
@@ -186,7 +196,7 @@ async function getReceiverPublicKey() {
     if (response.ok) {
       const receiverPublicKeyPem = await response.text();
 
-      // Convert PEM keys to Forge objects
+      // Convert PEM key to Forge object
       receiverPublicKey = forge.pki.publicKeyFromPem(receiverPublicKeyPem);
     } else {
       console.error("Could not get private key:", response.statusText);
@@ -196,18 +206,19 @@ async function getReceiverPublicKey() {
   }
 }
 
+// Save sent email in the server's database
 async function saveMessage(email){
   try{
+    // Send a POST request to the server with the sent email as JSON string in the request body
     const response = await fetch("/saveLetters", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(email, null, 2), // Convert the message object to JSON string and include it as the request body
+      body: JSON.stringify(email, null, 2), 
     });
 
     if (response.ok) {
-      // Request was successful
       console.log("The email was successfully saved");
     } else{
       console.error("Unable to save email:", response.statusText);
@@ -217,34 +228,33 @@ async function saveMessage(email){
   }
 }
 
+// Encrypt and send an email to the server
 async function sendMessage(email) {
   try {
     // Wait until receiverPublicKey is fetched before proceeding
     await getReceiverPublicKey();
 
-    const encryptedData = encryption(receiverPublicKey, email);
-
-    // Check if receiverPublicKey is available before sending the message
+    // Check if receiverPublicKey is available before encrypting the email
     if (receiverPublicKey == null || receiverPublicKey == undefined) {
       console.error("Receiver public key not available");
       return;
     }
 
-    // Send a POST request to the server with the message text as JSON string in the request body
+    // Encrypt email using the receiver's public key
+    const encryptedData = encryption(receiverPublicKey, email);
+
+    // Send a POST request to the server with the encrypted email as JSON string in the request body
     const response = await fetch("/addLetters", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(encryptedData, null, 2), // Convert the message object to JSON string and include it as the request body
+      body: JSON.stringify(encryptedData, null, 2), 
     });
 
-    // Check the response status
     if (response.ok) {
-      // Request was successful
       console.log("The email was successfully sent");
     } else {
-      // Request failed
       console.error("Unable to send email:", response.statusText);
     }
   } catch (error) {
@@ -252,12 +262,16 @@ async function sendMessage(email) {
   }
 }
 
+// Fetch the user's private key
 async function getPrivateKey() {
   try {
+    // Check if a generated RSA key pair has already been sent to the server
     if (!sendKeysExecuted) {
+      // Wait until a generated RSA key pair is sent to the server
       await sendKeys();
     }
 
+    // Send a GET request to the server to retrieve the user's private key
     const response = await fetch("/getPrivateKey", {
       method: "GET",
       headers: {
@@ -277,9 +291,10 @@ async function getPrivateKey() {
   }
 }
 
+// Fetch saved sent emails from the server's database
 async function getSavedMessages(){
   try {
-    // Send a GET request to the server to retrieve the JSON array
+    // Send a GET request to the server to retrieve the saved sent emails JSON array
     const response = await fetch("/getSavedLetters", {
       method: "GET",
       headers: {
@@ -288,18 +303,18 @@ async function getSavedMessages(){
     });
 
     if (response.ok) {
-      // Response received successfully
-      const messagesData = await response.json(); // Parse the response as JSON
+      // Parse the response as JSON
+      const messagesData = await response.json();
 
-      // Access the element in the DOM where you want to display the JSON data
+      // Access the element in the DOM where the sent emails will be displayed
       const outputElement = document.getElementById("Sent");
 
       // Clear any existing content in the outputElement
       outputElement.innerHTML = "";
 
-      // Loop through the array and create HTML elements to display the data
+      // Loop through the array and create HTML elements to display the sent emails
       messagesData.forEach((item) => {
-        // Create container div for each message
+        // Create container div for each sent email if the emails aren't undefined
         if (item.contact && item.title && item.message != undefined) {
           const messageContainer = document.createElement("div");
           messageContainer.setAttribute("class", "Card");
@@ -308,15 +323,17 @@ async function getSavedMessages(){
             `messageReceived('${item.contact}', '${item.title}', '${item.message}')`
           );
 
-          // Create contact element
+          // Create elements for structure
           const a = document.createElement("a");
           const br = document.createElement("br");
           const p = document.createElement("p");
 
+          // Create text nodes for each element of the email
           const contact = document.createTextNode(item.contact);
           const title = document.createTextNode(item.title);
           const message = document.createTextNode(item.message);
 
+          // Append created elements to create a message container
           messageContainer.appendChild(a);
           a.appendChild(contact);
           a.appendChild(br);
@@ -330,7 +347,6 @@ async function getSavedMessages(){
         }
       });
     } else {
-      // Request failed
       console.error("Could not get saved emails:", response.statusText);
     }
   } catch (error) {
@@ -338,8 +354,9 @@ async function getSavedMessages(){
   }
 }
 
+// Fetch and decrypt emails from the server
 async function getMessages() {
-  // Wait until receiverPublicKey is fetched before proceeding
+  // Wait until the user's private key is fetched before proceeding
   await getPrivateKey();
 
   // Check if privateKey is available before decrypting the messages
@@ -350,7 +367,7 @@ async function getMessages() {
 
   // getMessages est appelé dans Drop_menu()
   try {
-    // Send a GET request to the server to retrieve the JSON array
+    // Send a GET request to the server to retrieve the received emails JSON array
     const response = await fetch("/getLetters", {
       method: "GET",
       headers: {
@@ -359,21 +376,21 @@ async function getMessages() {
     });
 
     if (response.ok) {
-      // Response received successfully
-      const messagesData = await response.json(); // Parse the response as JSON
+      // Parse the response as JSON
+      const messagesData = await response.json(); 
 
-      // Access the "Inbox" array from the JSON data
+      // Decrypt received emails JSON array
       const inboxArray = decryption(privateKey, messagesData);
 
-      // Access the element in the DOM where you want to display the JSON data
+      // Access the element in the DOM where the received emails will be displayed
       const outputElement = document.getElementById("Received");
 
       // Clear any existing content in the outputElement
       outputElement.innerHTML = "";
 
-      // Loop through the array and create HTML elements to display the data
+      // Loop through the array and create HTML elements to display the received emails
       inboxArray.forEach((item) => {
-        // Create container div for each message
+        // Create container div for each email
         if (item.contact && item.title && item.message != undefined) {
           const messageContainer = document.createElement("div");
           messageContainer.setAttribute("class", "Card");
@@ -382,15 +399,17 @@ async function getMessages() {
             `messageReceived('${item.contact}', '${item.title}', '${item.message}')`
           );
 
-          // Create contact element
+          // Create elements for structure
           const a = document.createElement("a");
           const br = document.createElement("br");
           const p = document.createElement("p");
 
+          // Create text nodes for each element of the email
           const contact = document.createTextNode(item.contact);
           const title = document.createTextNode(item.title);
           const message = document.createTextNode(item.message);
 
+          // Append created elements to create a message container
           messageContainer.appendChild(a);
           a.appendChild(contact);
           a.appendChild(br);
@@ -404,7 +423,6 @@ async function getMessages() {
         }
       });
     } else {
-      // Request failed
       console.error("Could not receive emails:", response.statusText);
     }
   } catch (error) {
@@ -412,6 +430,7 @@ async function getMessages() {
   }
 }
 
+// Function for encryption using receiver's public key
 const encryption = (receiverPublicKey, email) => {
   // Create variables that contain the properties that need to be encrypted
   const contact = email.contact;
@@ -423,7 +442,7 @@ const encryption = (receiverPublicKey, email) => {
   const titleBytes = forge.util.encodeUtf8(title);
   const messageBytes = forge.util.encodeUtf8(message);
 
-  // Encrypt the message properties using the RSA public key
+  // Encrypt the email properties using the receiver's public key
   const encryptedContact = receiverPublicKey.encrypt(contactBytes, "RSA-OAEP", {
     md: forge.md.sha256.create(),
   });
@@ -434,7 +453,7 @@ const encryption = (receiverPublicKey, email) => {
     md: forge.md.sha256.create(),
   });
 
-  // Convert the encrypted binary data to Base64 strings
+  // Convert the encrypted binary data to Base64 strings to prevent data from corrupting
   const encryptedContactBase64 = forge.util.encode64(encryptedContact);
   const encryptedTitleBase64 = forge.util.encode64(encryptedTitle);
   const encryptedMessageBase64 = forge.util.encode64(encryptedMessage);
@@ -446,34 +465,31 @@ const encryption = (receiverPublicKey, email) => {
     message: encryptedMessageBase64,
   };
 
+  // Return encrypted email object
   return encryptedData;
 };
 
+// Function for decryption using the user's private key
 const decryption = (privateKey, messagesData) => {
+  // Loop through the array and decrypt each encrypted property of each email object
   const decryptedData = messagesData.map((encryptedData) => {
     // Convert Base64 strings back to binary data
     const decodedContactBytes = forge.util.decode64(encryptedData.contact);
     const decodedTitleBytes = forge.util.decode64(encryptedData.title);
     const decodedMessageBytes = forge.util.decode64(encryptedData.message);
 
-    const decryptedContact = privateKey.decrypt(
-      decodedContactBytes,
-      "RSA-OAEP",
-      {
+    // Decrypt the email properties using the user's private key
+    const decryptedContact = privateKey.decrypt(decodedContactBytes, "RSA-OAEP", {
         md: forge.md.sha256.create(),
-      }
-    );
+      });
     const decryptedTitle = privateKey.decrypt(decodedTitleBytes, "RSA-OAEP", {
       md: forge.md.sha256.create(),
     });
-    const decryptedMessage = privateKey.decrypt(
-      decodedMessageBytes,
-      "RSA-OAEP",
-      {
+    const decryptedMessage = privateKey.decrypt(decodedMessageBytes, "RSA-OAEP", {
         md: forge.md.sha256.create(),
-      }
-    );
+    });
 
+    // Return decrypted email object
     return {
       contact: decryptedContact,
       title: decryptedTitle,
@@ -481,5 +497,6 @@ const decryption = (privateKey, messagesData) => {
     };
   });
 
+  // Return decrypted received emails JSON array
   return decryptedData;
 };

@@ -8,26 +8,29 @@ import { dirname } from 'path';
 
 const { secret_key, secret_iv, encryption_method } = config;
 
+// Check if secret_key, secret_iv and encryption_method exist before proceeding with the encryption/decryption
 if (!secret_key || !secret_iv || !encryption_method) {
   throw new Error("secretKey, secretIV, and ecnryptionMethod are required");
 }
 
+// Define filename and dirname using Node.js modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Set the path for the AESKey.env file
 const keyFilePath = path.join(__dirname, "AESKey.env");
 
+// Check if AESKey.env file already exists
 fs.access(keyFilePath, fs.constants.F_OK, (err) => {
   if (err) {
-    // File doesn't exist, so create it and add the AES key
+    // File doesn't exist, so create it and add generated AES key and IV
     const aesKey = generateAESKey();
-
     const data = `AES_KEY=${aesKey.key}\nENCRYPTION_IV=${aesKey.encryptionIV}`;
 
+    // Store the AES key and IV inside the AESKey.env file
     fs.writeFile(keyFilePath, data, (err) => {
       if (err) throw err;
       console.log("AESKey.env file created and AES_KEY and ENCRYPTION_IV stored.");
-      // Now you can use the AES key (aesKey) for encryption/decryption
     });
   } else {
     console.log("AESKey.env file already exists. Skipping creation.");
