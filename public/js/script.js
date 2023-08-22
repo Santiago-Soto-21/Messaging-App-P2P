@@ -36,6 +36,16 @@ function search() {
 function NewMail() {
   deleteMail();
 
+  const addressInput = document.getElementById("Address");
+  const titleInput = document.getElementById("Title");
+  const contentTextarea = document.getElementById("Content");
+
+  // Turns off read only mode so the user can write emails
+  addressInput.readOnly = false;
+  titleInput.readOnly = false;
+  contentTextarea.readOnly = false;
+
+  // Display email form
   document.getElementById("form").style.display = "block";
 
   // Create "Send" button
