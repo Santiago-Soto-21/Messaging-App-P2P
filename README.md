@@ -4,7 +4,7 @@ P2P messaging application that uses RSA and AES-256 encryption to send secure me
 
  # Overview
 
- This messaging application allows the user to send email messages in a secure way using RSA encryption and Peer to Peer communication. The user writes the email he would like to send using the email form on the client side (`script.js`) and sends the encrypted email to the server side (`server.js`) which stores it inside JSON a file. The encrypted email is then retrieved by the receiver's server and displayed on the inbox section in the receiver's `index.ejs` file.
+ This messaging application enables users to send email messages securely using RSA encryption and Peer-to-Peer communication. Users can compose their desired emails via the email form on the client side (`script.js`). These emails are then encrypted and forwarded to the server side (`server.js`), where they are stored in a JSON file. Subsequently, the recipient's server retrieves the encrypted email, presenting it within the inbox section of the recipient's `index.ejs` file.
 
  ## Client side
  ### Generation and fetching of RSA key pair
