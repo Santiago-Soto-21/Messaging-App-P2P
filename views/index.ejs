@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=, initial-scale=1.0" />
-    <title>Messagerie Web</title>
+    <title>Messaging App P2P</title>
     <link rel="stylesheet" href="css/style.css" type="text/css" />
     <script src="js/forge.min.js"></script>
   </head>
@@ -16,7 +16,7 @@
         type="searching"
         id="search"
         onkeyup="search()"
-        placeholder="Search emails"
+        placeholder="Search an email or an address"
       />
       &#128269;
     </div>
@@ -48,17 +48,11 @@
 
     <div class="Emails">
       <div class="list" id="Received">
-        <div class="Card">
-          <a></a>
-          <p style="display: none">Content</p>
-        </div>
+        <!-- Where received messages will be displayed -->
       </div>
 
       <div class="list" id="Sent">
-        <div class="Card">
-          <a></a>
-          <p style="display: none">Content</p>
-        </div>
+          <!-- Where sent messages will be displayed -->
       </div>
     </div>
 
