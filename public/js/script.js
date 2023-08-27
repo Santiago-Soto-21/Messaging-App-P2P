@@ -20,7 +20,7 @@ function search() {
     div = Received.getElementsByTagName("div");
   }
 
-   // Loop through the elements and update display style based on filter
+  // Loop through the elements and update display style based on filter
   for (let i = 0; i < div.length; i++) {
     a = div[i].getElementsByTagName("a")[0];
     str = a.textContent || a.innerText;
@@ -92,21 +92,27 @@ function addMail() {
 }
 
 // Function to display the contents of received emails and sent emails
-function messageReceived(contact, title, message) {
+function displayMessages(contactBase64, titleBase64, messageBase64) {
   deleteMail();
 
   const formElement = document.getElementById("form");
   const addressInput = document.getElementById("Address");
   const titleInput = document.getElementById("Title");
   const contentTextarea = document.getElementById("Content");
-  
+
   // Turns on read only mode to stop the user from modifying the contents of the displayed emails
   addressInput.readOnly = true;
   titleInput.readOnly = true;
   contentTextarea.readOnly = true;
- 
-  document.getElementById("Title").value = title;
+
+  // Converts base64 back to utf8  
+  const contact = forge.util.decode64(contactBase64);
+  const title = forge.util.decode64(titleBase64);
+  const message = forge.util.decode64(messageBase64);
+
+  // Displays data
   document.getElementById("Address").value = contact;
+  document.getElementById("Title").value = title;
   document.getElementById("Content").value = message;
 
   formElement.style.display = "block";
@@ -121,7 +127,7 @@ function deleteMail() {
   var form = document.getElementById("form");
   var existingButtons = form.querySelectorAll("button");
 
-  existingButtons.forEach(button => {
+  existingButtons.forEach((button) => {
     button.remove();
   });
 
@@ -209,30 +215,30 @@ async function getReceiverPublicKey() {
       // Convert PEM key to Forge object
       receiverPublicKey = forge.pki.publicKeyFromPem(receiverPublicKeyPem);
     } else {
-      console.error("Could not get private key:", response.statusText);
+      console.error("Could not get receiver's public key:", response.statusText);
     }
   } catch (error) {
-    console.error("Could not get private key:", error);
+    console.error("Could not get receiver's public key:", error);
   }
 }
 
 // Save sent email in the server's database
-async function saveMessage(email){
-  try{
+async function saveMessage(email) {
+  try {
     // Send a POST request to the server with the sent email as JSON string in the request body
     const response = await fetch("/saveLetters", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(email, null, 2), 
+      body: JSON.stringify(email, null, 2),
     });
 
     if (response.ok) {
       console.log("The email was successfully saved");
-    } else{
+    } else {
       console.error("Unable to save email:", response.statusText);
-    } 
+    }
   } catch (error) {
     console.error("Unable to save email:", error);
   }
@@ -259,7 +265,7 @@ async function sendMessage(email) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(encryptedData, null, 2), 
+      body: JSON.stringify(encryptedData, null, 2),
     });
 
     if (response.ok) {
@@ -302,7 +308,7 @@ async function getPrivateKey() {
 }
 
 // Fetch saved sent emails from the server's database
-async function getSavedMessages(){
+async function getSavedMessages() {
   try {
     // Send a GET request to the server to retrieve the saved sent emails JSON array
     const response = await fetch("/getSavedLetters", {
@@ -326,31 +332,32 @@ async function getSavedMessages(){
       messagesData.forEach((item) => {
         // Create container div for each sent email if the emails aren't undefined
         if (item.contact && item.title && item.message != undefined) {
+          // Convert to base64 to prevent syntax errors
+          const contactBase64 = forge.util.encode64(item.contact);
+          const titleBase64 = forge.util.encode64(item.title);
+          const messageBase64 = forge.util.encode64(item.message);
+
+          // Create message container
           const messageContainer = document.createElement("div");
           messageContainer.setAttribute("class", "Card");
           messageContainer.setAttribute(
             "onclick",
-            `messageReceived('${item.contact}', '${item.title}', '${item.message}')`
+            `displayMessages('${contactBase64}', '${titleBase64}', '${messageBase64}')`
           );
 
           // Create elements for structure
-          const a = document.createElement("a");
+          const div = document.createElement("div");
           const br = document.createElement("br");
-          const p = document.createElement("p");
 
           // Create text nodes for each element of the email
           const contact = document.createTextNode(item.contact);
           const title = document.createTextNode(item.title);
-          const message = document.createTextNode(item.message);
 
           // Append created elements to create a message container
-          messageContainer.appendChild(a);
-          a.appendChild(contact);
-          a.appendChild(br);
-          a.appendChild(title);
-          messageContainer.appendChild(p);
-          p.appendChild(message);
-          p.setAttribute("style", "display:none;");
+          messageContainer.appendChild(div);
+          div.appendChild(contact);
+          div.appendChild(br);
+          div.appendChild(title);
 
           // Append the message container to the outputElement
           outputElement.appendChild(messageContainer);
@@ -375,7 +382,6 @@ async function getMessages() {
     return;
   }
 
-  // getMessages est appelé dans Drop_menu()
   try {
     // Send a GET request to the server to retrieve the received emails JSON array
     const response = await fetch("/getLetters", {
@@ -387,7 +393,7 @@ async function getMessages() {
 
     if (response.ok) {
       // Parse the response as JSON
-      const messagesData = await response.json(); 
+      const messagesData = await response.json();
 
       // Decrypt received emails JSON array
       const inboxArray = decryption(privateKey, messagesData);
@@ -400,33 +406,34 @@ async function getMessages() {
 
       // Loop through the array and create HTML elements to display the received emails
       inboxArray.forEach((item) => {
-        // Create container div for each email
+        // Check if contact, title and message properties are all available before displaying messages
         if (item.contact && item.title && item.message != undefined) {
+          // Convert to base64 to prevent syntax errors
+          const contactBase64 = forge.util.encode64(item.contact);
+          const titleBase64 = forge.util.encode64(item.title);
+          const messageBase64 = forge.util.encode64(item.message);
+
+          // Create message container
           const messageContainer = document.createElement("div");
           messageContainer.setAttribute("class", "Card");
           messageContainer.setAttribute(
             "onclick",
-            `messageReceived('${item.contact}', '${item.title}', '${item.message}')`
+            `displayMessages('${contactBase64}', '${titleBase64}', '${messageBase64}')`
           );
 
           // Create elements for structure
-          const a = document.createElement("a");
+          const div = document.createElement("div");
           const br = document.createElement("br");
-          const p = document.createElement("p");
 
           // Create text nodes for each element of the email
           const contact = document.createTextNode(item.contact);
           const title = document.createTextNode(item.title);
-          const message = document.createTextNode(item.message);
 
           // Append created elements to create a message container
-          messageContainer.appendChild(a);
-          a.appendChild(contact);
-          a.appendChild(br);
-          a.appendChild(title);
-          messageContainer.appendChild(p);
-          p.appendChild(message);
-          p.setAttribute("style", "display:none;");
+          messageContainer.appendChild(div);
+          div.appendChild(contact);
+          div.appendChild(br);
+          div.appendChild(title);
 
           // Append the message container to the outputElement
           outputElement.appendChild(messageContainer);
@@ -447,66 +454,146 @@ const encryption = (receiverPublicKey, email) => {
   const title = email.title;
   const message = email.message;
 
-  // Convert input data to binary using UTF-8 encoding
-  const contactBytes = forge.util.encodeUtf8(contact);
-  const titleBytes = forge.util.encodeUtf8(title);
-  const messageBytes = forge.util.encodeUtf8(message);
+  // Encrypt the email properties using AES-256
+  const encryptedData = aesEncryption(contact, title, message);
 
-  // Encrypt the email properties using the receiver's public key
-  const encryptedContact = receiverPublicKey.encrypt(contactBytes, "RSA-OAEP", {
-    md: forge.md.sha256.create(),
-  });
-  const encryptedTitle = receiverPublicKey.encrypt(titleBytes, "RSA-OAEP", {
-    md: forge.md.sha256.create(),
-  });
-  const encryptedMessage = receiverPublicKey.encrypt(messageBytes, "RSA-OAEP", {
+  // Encrypt the generated aesKey and encryptionIV using the receiver's public key
+  const encryptedAesKey = receiverPublicKey.encrypt(encryptedData.aesKey, "RSA-OAEP", {
     md: forge.md.sha256.create(),
   });
 
-  // Convert the encrypted binary data to Base64 strings to prevent data from corrupting
-  const encryptedContactBase64 = forge.util.encode64(encryptedContact);
-  const encryptedTitleBase64 = forge.util.encode64(encryptedTitle);
-  const encryptedMessageBase64 = forge.util.encode64(encryptedMessage);
+  const encryptedIV = receiverPublicKey.encrypt(encryptedData.encryptionIV, "RSA-OAEP", {
+    md: forge.md.sha256.create(),
+  });
 
-  // Create a new object with encrypted properties
-  const encryptedData = {
-    contact: encryptedContactBase64,
-    title: encryptedTitleBase64,
-    message: encryptedMessageBase64,
-  };
+  // Convert to base64 to prevent data corruption
+  encryptedData.aesKey = forge.util.encode64(encryptedAesKey);
+  encryptedData.encryptionIV = forge.util.encode64(encryptedIV);
 
   // Return encrypted email object
   return encryptedData;
 };
 
+function aesEncryption(contact, title, message) {
+  // Generate a random 256-bit encryption key
+  const aesKey = forge.random.getBytesSync(32);
+
+  // Create a random initialization vector (IV)
+  const iv = forge.random.getBytesSync(16);
+  
+  // Convert the input data to Forge buffers
+  const contactBuffer = forge.util.createBuffer(contact, 'utf8');
+  const titleBuffer = forge.util.createBuffer(title, 'utf8');
+  const messageBuffer = forge.util.createBuffer(message, 'utf8');
+
+  // Create the AES cipher with the key and IV
+  const cipher = forge.cipher.createCipher('AES-CBC', aesKey);
+
+  // Encrypt data
+  cipher.start({ iv: iv });
+  cipher.update(contactBuffer);
+  cipher.finish();
+
+  // Get the encrypted data as bytes and convert it to base64
+  const encryptedContact = cipher.output.bytes();
+  const encryptedContactBase64 = forge.util.encode64(encryptedContact);
+
+  cipher.start({ iv: iv });
+  cipher.update(titleBuffer);
+  cipher.finish();
+
+  const encryptedTitle = cipher.output.bytes();
+  const encryptedTitleBase64 = forge.util.encode64(encryptedTitle);
+
+  cipher.start({ iv: iv });
+  cipher.update(messageBuffer);
+  cipher.finish();
+
+  const encryptedMessage = cipher.output.bytes();
+  const encryptedMessageBase64 = forge.util.encode64(encryptedMessage);
+
+  // Return encrypted properties along with AES Key and encryption IV used
+  return {
+    contact: encryptedContactBase64,
+    title: encryptedTitleBase64,
+    message: encryptedMessageBase64,
+    aesKey: aesKey,
+    encryptionIV: iv,
+  };
+}
+
 // Function for decryption using the user's private key
 const decryption = (privateKey, messagesData) => {
   // Loop through the array and decrypt each encrypted property of each email object
   const decryptedData = messagesData.map((encryptedData) => {
-    // Convert Base64 strings back to binary data
-    const decodedContactBytes = forge.util.decode64(encryptedData.contact);
-    const decodedTitleBytes = forge.util.decode64(encryptedData.title);
-    const decodedMessageBytes = forge.util.decode64(encryptedData.message);
-
-    // Decrypt the email properties using the user's private key
-    const decryptedContact = privateKey.decrypt(decodedContactBytes, "RSA-OAEP", {
-        md: forge.md.sha256.create(),
-      });
-    const decryptedTitle = privateKey.decrypt(decodedTitleBytes, "RSA-OAEP", {
+    // Decode AES key and encryption IV from base 64
+    const encryptedAeskey = forge.util.decode64(encryptedData.aesKey);
+    const encryptedEncryptionIV = forge.util.decode64(encryptedData.encryptionIV);
+  
+    // Decrypt the AES key and encryptionIV using the user's private key
+    encryptedData.aesKey = privateKey.decrypt(encryptedAeskey, "RSA-OAEP", {
       md: forge.md.sha256.create(),
     });
-    const decryptedMessage = privateKey.decrypt(decodedMessageBytes, "RSA-OAEP", {
-        md: forge.md.sha256.create(),
+
+    encryptedData.encryptionIV = privateKey.decrypt(encryptedEncryptionIV, "RSA-OAEP", {
+      md: forge.md.sha256.create(),
     });
 
+    // Decrypt the email properties using the user's private key
+    const decryptedEmail = aesDecryption(encryptedData);
+
     // Return decrypted email object
-    return {
-      contact: decryptedContact,
-      title: decryptedTitle,
-      message: decryptedMessage,
-    };
+    return decryptedEmail;
   });
 
   // Return decrypted received emails JSON array
   return decryptedData;
 };
+
+// Decrypt data using AES-256
+function aesDecryption(encryptedData) {
+  // Convert received encrypted properties in base64 back into bytes
+  const encryptedContactBytes = forge.util.decode64(encryptedData.contact);
+  const encryptedTitleBytes = forge.util.decode64(encryptedData.title);
+  const encryptedMessageBytes = forge.util.decode64(encryptedData.message);
+
+  // Create buffers to hold data to decrypt 
+  const encryptedContact = forge.util.createBuffer(encryptedContactBytes, 'binary');
+  const encryptedTitle = forge.util.createBuffer(encryptedTitleBytes, 'binary');
+  const encryptedMessage = forge.util.createBuffer(encryptedMessageBytes, 'binary');
+
+  // Retrieves AES key and encryption IV used for AES encryption
+  const aesKey = encryptedData.aesKey;
+  const encryptionIV = encryptedData.encryptionIV
+
+  // Create the AES decipher with the key and IV
+  const decipher = forge.cipher.createDecipher('AES-CBC', aesKey);
+
+  // Decrypt data and convert it back to utf8
+  decipher.start({ iv: encryptionIV });
+  decipher.update(encryptedContact);
+  decipher.finish();
+
+  const decryptedContactBytes = decipher.output.getBytes();
+  const decryptedContact = decryptedContactBytes.toString('utf8');
+
+  decipher.start({ iv: encryptionIV });
+  decipher.update(encryptedTitle);
+  decipher.finish();
+
+  const decryptedTitleBytes = decipher.output.getBytes();
+  const decryptedTitle = decryptedTitleBytes.toString('utf8');
+
+  decipher.start({ iv: encryptionIV });
+  decipher.update(encryptedMessage);
+  decipher.finish();
+
+  const decryptedMessageBytes = decipher.output.getBytes();
+  const decryptedMessage = decryptedMessageBytes.toString('utf8')
+
+  return {
+    contact: decryptedContact,
+    title: decryptedTitle,
+    message: decryptedMessage,
+  };
+}
