@@ -1,5 +1,5 @@
 // Import necessary modules
-import { encryptData, decryptData } from "./encryption.js";
+import { encryptRSAKeys, decryptRSAKeys } from "./encryption.js";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import express from "express";
@@ -37,7 +37,7 @@ app.post("/addKeys", (req, res) => {
       const keys = req.body;
 
       // Encrypt the user's private key using AES-256
-      keys.privateKey = encryptData(keys.privateKey);
+      keys.privateKey = encryptRSAKeys(keys.privateKey);
 
       // Store keys inside keys.pem file
       fs.writeFile(keysFilePath, JSON.stringify(keys, null, 2), (err) => {
@@ -133,7 +133,7 @@ app.get("/getPrivateKey", (req, res) => {
     const keys = JSON.parse(fileContents);
 
     // Decrypt private key using AES-256
-    const privateKeyPem = decryptData(keys.privateKey);
+    const privateKeyPem = decryptRSAKeys(keys.privateKey);
 
     // Send decrypted private key as a response
     res.send(privateKeyPem);

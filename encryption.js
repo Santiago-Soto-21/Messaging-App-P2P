@@ -3,8 +3,8 @@ import config from "./config.js";
 import fs from "fs";
 import dotenv from "dotenv";
 import path from "path";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const { secret_key, secret_iv, encryption_method } = config;
 
@@ -30,7 +30,9 @@ fs.access(keyFilePath, fs.constants.F_OK, (err) => {
     // Store the AES key and IV inside the AESKey.env file
     fs.writeFile(keyFilePath, data, (err) => {
       if (err) throw err;
-      console.log("AESKey.env file created and AES_KEY and ENCRYPTION_IV stored.");
+      console.log(
+        "AESKey.env file created and AES_KEY and ENCRYPTION_IV stored."
+      );
     });
   } else {
     console.log("AESKey.env file already exists. Skipping creation.");
@@ -58,8 +60,8 @@ function generateAESKey() {
   return AESKey;
 }
 
-// Encrypt data
-export function encryptData(data) {
+// Encrypt private key
+export function encryptRSAKeys(data) {
   dotenv.config({ path: keyFilePath });
 
   const key = process.env.AES_KEY;
@@ -71,13 +73,13 @@ export function encryptData(data) {
   ).toString("base64"); // Encrypts data and converts to hex and base64
 }
 
-// Decrypt data
-export function decryptData(encryptedData) {
+// Decrypt private key
+export function decryptRSAKeys(encryptedData) {
   dotenv.config({ path: keyFilePath });
 
   const key = process.env.AES_KEY;
   const encryptionIV = process.env.ENCRYPTION_IV;
-  
+
   const buff = Buffer.from(encryptedData, "base64");
   const decipher = crypto.createDecipheriv(
     encryption_method,
