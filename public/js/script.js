@@ -558,9 +558,9 @@ function aesDecryption(encryptedData) {
   const encryptedMessageBytes = forge.util.decode64(encryptedData.message);
 
   // Create buffers to hold data to decrypt 
-  const encryptedContact = forge.util.createBuffer(encryptedContactBytes, 'binary');
-  const encryptedTitle = forge.util.createBuffer(encryptedTitleBytes, 'binary');
-  const encryptedMessage = forge.util.createBuffer(encryptedMessageBytes, 'binary');
+  const encryptedContact = forge.util.createBuffer(encryptedContactBytes, 'raw');
+  const encryptedTitle = forge.util.createBuffer(encryptedTitleBytes, 'raw');
+  const encryptedMessage = forge.util.createBuffer(encryptedMessageBytes, 'raw');
 
   // Retrieves AES key and encryption IV used for AES encryption
   const aesKey = encryptedData.aesKey;
